@@ -74,6 +74,7 @@ def main():
         correct_num = 0
     logging.info("================>>结束预测！<<================")
 
+    
 
 if __name__ == '__main__':
     main()
