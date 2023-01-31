@@ -17,15 +17,17 @@ import torch.optim.lr_scheduler as lr_scheduler
 from data_split.data_split2 import data_set_split
 import os
 from model_v2 import MobileNetV2
-os.environ["CUDA_VISIBLE_DEVICES"]='1'
+from utils.concat_dataset import move_picture
+os.environ["CUDA_VISIBLE_DEVICES"]='0'
 
 # 参考 https://github.com/lukemelas/EfficientNet-PyTorch/blob/master/examples/imagenet/main.py
 parser = argparse.ArgumentParser(description='Training with pytorch')
-parser.add_argument("--root_datasets",default="/algdata01/yiguo.huang/yanye/test6mobilenet/Data/data20221209_all/class_B01_B03/",help='Dataset directory path')
-parser.add_argument("--target_data_folder",default="/algdata01/yiguo.huang/yanye/test6mobilenet/Data/data20221209_all/class_B01_B03_output_2/",help='Dataset directory path')
-parser.add_argument("--weights_folder",default="/algdata01/yiguo.huang/yanye/test6mobilenet/Data/data20221209_all/weights/weights_B01_B03_2/",help='Dataset directory path')
-parser.add_argument('--resume', default='/algdata01/yiguo.huang/yanye/test6mobilenet/Data/data20221209_all/weights/weights_B01_B03/model-300_of_1000-0.004918756429105997-0.6492027334851936.pth',
-                    type = str,help='Directory for saving checkpoint models')
+parser.add_argument("--root_datasets", nargs='+',default=["/algdata01/yiguo.huang/yanye/test6mobilenet/Data/data_test/20221101_XW/Handover_sanmingyouxi_C03_A",
+                                                          "/algdata01/yiguo.huang/yanye/test6mobilenet/Data/data_test/20221101_XW/Handover_sanmingyouxi_C03_B",
+                                                          "/algdata01/yiguo.huang/yanye/test6mobilenet/Data/data_test/20221105_SW/standard_sanmingyouxi_B03_A",
+                                                          "/algdata01/yiguo.huang/yanye/test6mobilenet/Data/data_test/20221105_SW/standard_sanmingyouxi_B03_B",],help='Dataset directory path')
+parser.add_argument("--Data_folder",default="/algdata01/yiguo.huang/yanye/test6mobilenet/Data/",help='Dataset directory path')
+parser.add_argument("--weights_folder",default="/algdata01/yiguo.huang/yanye/test6mobilenet/weights/weights_test/",help='Dataset directory path')
 
 parser.add_argument('--balance_data', action='store_true',help="Balance training data by down-sampling more frequent labels.")
 parser.add_argument('--net', default="MobileNetV2",help="The network architecture, it can be MobileNetV1, MobileNetV2,or MobileNetV3.")
@@ -44,6 +46,8 @@ parser.add_argument('--num_workers', default=8, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--use_cuda', default=True, type=bool,
                     help='Use CUDA to train model')
+parser.add_argument('--resume', default=None,
+                    type = str,help='Directory for saving checkpoint models')
 parser.add_argument('--lrf', type=float, default=0.001) # 0.01
 parser.add_argument('--seed', default=10, type=int,help='seed for initializing training. ')
 
@@ -140,15 +144,18 @@ def main():
         "train": transforms.Compose([
             transforms.Resize([800,400]),
             transforms.ToTensor(),
-            transforms.Normalize([0.1440268, 0.09442947, 0.040968522], [0.16813725, 0.11243858, 0.04965655])
+            transforms.Normalize([0.16887867, 0.11643473, 0.049713317], [0.20335488, 0.1409118, 0.061040655])
         ]),
         "val": transforms.Compose([
             transforms.Resize([800,400]),
             transforms.ToTensor(),
-            transforms.Normalize([0.1440268, 0.09442947, 0.040968522], [0.16813725, 0.11243858, 0.04965655])
+            transforms.Normalize([0.16887867, 0.11643473, 0.049713317], [0.20335488, 0.1409118, 0.061040655])
         ])}
 
-    train_images_path, train_images_labels, val_images_path, val_images_labels = data_set_split(args.root_datasets,args.target_data_folder)
+
+    root_datasets, root_datasets_output = move_picture(args.root_datasets, args.Data_folder)
+
+    train_images_path, train_images_labels, val_images_path, val_images_labels = data_set_split(root_datasets, root_datasets_output)
 
     train_dataset = MyDataSet(images_path=train_images_path, images_class=train_images_labels, transform=transform["train"])
     # print("train_dataset",train_dataset)
@@ -200,6 +207,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
